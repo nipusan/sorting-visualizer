@@ -1,25 +1,60 @@
 import pygame
 import random
 import time
+import os
+import importlib.util
 
 # Configuración de la pantalla
 WIDTH, HEIGHT = 800, 600
-WHITE, BLACK, RED, GREEN, BLUE, ORANGE, PURPLE, CYAN = (
-    (255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0),
-    (0, 0, 255), (255, 165, 0), (128, 0, 128), (0, 255, 255)
-)
+WHITE, BLACK = (255, 255, 255), (0, 0, 0)
 
 # Inicializar Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Visualización de Algoritmos de Ordenamiento")
-clock = pygame.time.Clock()
 font = pygame.font.Font(None, 30)
 
 # Variables de estadísticas
 iterations = 0
 start_time = 0
 algo_name = ""
+
+# Cargar algoritmos dinámicamente desde el directorio "algorithms"
+def load_algorithms():
+    algorithms = []
+    for file in os.listdir("algorithms"):
+        if file.endswith(".py"):
+            module_name = file[:-3]  # Quitar la extensión .py
+            module_path = os.path.join("algorithms", file)
+            spec = importlib.util.spec_from_file_location(module_name, module_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # Buscar una clase dentro del módulo
+            for attr_name in dir(module):
+                attr = getattr(module, attr_name)
+                if isinstance(attr, type) and attr.__module__ == module_name:
+                    algorithms.append(attr)
+                    break  # Tomamos la primera clase encontrada
+    return algorithms
+
+algorithms = load_algorithms()
+
+# Función para visualizar los algoritmos disponibles en el menú
+def draw_menu():
+    screen.fill(BLACK)
+    text_lines = ["Seleccione un algoritmo de ordenamiento:"]
+
+    for i, algo in enumerate(algorithms):
+        text_lines.append(f"{i+1} - {algo.name} ({algo.complexity})")
+
+    text_lines.append("ESC - Salir")
+
+    for i, line in enumerate(text_lines):
+        text = font.render(line, True, WHITE)
+        screen.blit(text, (WIDTH // 6, HEIGHT // 3 + i * 40))
+
+    pygame.display.update()
 
 # Función para dibujar estadísticas en pantalla
 def draw_stats():
@@ -31,7 +66,7 @@ def draw_stats():
     pygame.display.update()
 
 # Función para dibujar las barras
-def draw_array(arr, colors):
+def draw_array(arr):
     global iterations
     iterations += 1
     draw_stats()
@@ -43,143 +78,39 @@ def draw_array(arr, colors):
     for i, val in enumerate(arr):
         x = i * bar_width
         y = HEIGHT - (val / max_height) * (HEIGHT - 50)
-        pygame.draw.rect(screen, colors[i], (x, y, bar_width - 2, HEIGHT - y))
+        pygame.draw.rect(screen, WHITE, (x, y, bar_width - 2, HEIGHT - y))
 
     pygame.display.update()
     time.sleep(0.02)  # Pequeña pausa para hacer la animación más fluida
 
-# Función genérica de animación
-def visualize_sort(sort_function, arr, title):
-    global iterations, start_time, algo_name
-    iterations = 0
-    start_time = time.time()
-    algo_name = title
-
-    pygame.display.set_caption(title)
-    colors = [WHITE] * len(arr)
-    sort_function(arr, colors)
-    draw_array(arr, colors)
-    time.sleep(1)  # Pausa final para ver el resultado ordenado
-
-# QUICK SORT
-def quicksort(arr, colors, low=0, high=None):
-    if high is None:
-        high = len(arr) - 1
-
-    def partition(low, high):
-        pivot = arr[high]
-        i = low - 1
-        for j in range(low, high):
-            if arr[j] < pivot:
-                i += 1
-                arr[i], arr[j] = arr[j], arr[i]
-                colors[i], colors[j] = RED, RED
-                draw_array(arr, colors)
-                colors[i], colors[j] = WHITE, WHITE
-        arr[i + 1], arr[high] = arr[high], arr[i + 1]
-        draw_array(arr, colors)
-        return i + 1
-
-    if low < high:
-        pi = partition(low, high)
-        quicksort(arr, colors, low, pi - 1)
-        quicksort(arr, colors, pi + 1, high)
-
-# MERGE SORT
-def mergesort(arr, colors):
-    def merge(left, right):
-        sorted_arr = []
-        while left and right:
-            if left[0] < right[0]:
-                sorted_arr.append(left.pop(0))
-            else:
-                sorted_arr.append(right.pop(0))
-        sorted_arr.extend(left or right)
-        return sorted_arr
-
-    def sort(arr):
-        if len(arr) <= 1:
-            return arr
-        mid = len(arr) // 2
-        left = sort(arr[:mid])
-        right = sort(arr[mid:])
-        sorted_arr = merge(left, right)
-        draw_array(sorted_arr, [BLUE] * len(sorted_arr))
-        return sorted_arr
-
-    arr[:] = sort(arr)
-
-# HEAP SORT
-def heapsort(arr, colors):
-    def heapify(n, i):
-        largest = i
-        left = 2 * i + 1
-        right = 2 * i + 2
-        if left < n and arr[left] > arr[largest]:
-            largest = left
-        if right < n and arr[right] > arr[largest]:
-            largest = right
-        if largest != i:
-            arr[i], arr[largest] = arr[largest], arr[i]
-            colors[i], colors[largest] = PURPLE, PURPLE
-            draw_array(arr, colors)
-            colors[i], colors[largest] = WHITE, WHITE
-            heapify(n, largest)
-
-    n = len(arr)
-    for i in range(n // 2 - 1, -1, -1):
-        heapify(n, i)
-    for i in range(n - 1, 0, -1):
-        arr[i], arr[0] = arr[0], arr[i]
-        colors[i], colors[0] = ORANGE, ORANGE
-        draw_array(arr, colors)
-        colors[i], colors[0] = WHITE, WHITE
-        heapify(i, 0)
-
-# TIMSORT (Python interno)
-def timsort(arr, colors):
-    arr.sort()
-    draw_array(arr, [CYAN] * len(arr))
-
-# Función principal con menú interactivo
+# Función principal
 def main():
-    global array_size
+    global algo_name, start_time, iterations, array_size
     running = True
     while running:
-        # Dibujar el menú
-        screen.fill(BLACK)
-        text_lines = [
-            "Seleccione un algoritmo de ordenamiento:",
-            "1 - QuickSort",
-            "2 - MergeSort",
-            "3 - HeapSort",
-            "4 - Timsort",
-            "ESC - Salir"
-        ]
-
-        for i, line in enumerate(text_lines):
-            text = font.render(line, True, WHITE)
-            screen.blit(text, (WIDTH // 4, HEIGHT // 3 + i * 40))
-        
-        pygame.display.update()
-
+        draw_menu()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
-                array_size = 50
-                arr = [random.randint(10, 500) for _ in range(array_size)]
-                
-                if event.key == pygame.K_1:
-                    visualize_sort(quicksort, arr.copy(), "QuickSort")
-                elif event.key == pygame.K_2:
-                    visualize_sort(mergesort, arr.copy(), "MergeSort")
-                elif event.key == pygame.K_3:
-                    visualize_sort(heapsort, arr.copy(), "HeapSort")
-                elif event.key == pygame.K_4:
-                    visualize_sort(timsort, arr.copy(), "Timsort (Python Sort)")
-                elif event.key == pygame.K_ESCAPE:
+                keys = list(range(pygame.K_1, pygame.K_1 + len(algorithms)))
+
+                if event.key == pygame.K_ESCAPE:
                     running = False
+                elif event.key in keys:
+                    index = event.key - pygame.K_1
+                    selected_algo = algorithms[index]
+                    
+                    # Configuración para la ejecución
+                    algo_name = selected_algo.name
+                    array_size = 50
+                    arr = [random.randint(10, 500) for _ in range(array_size)]
+                    iterations = 0
+                    start_time = time.time()
+
+                    # Ejecutar el algoritmo con animación
+                    selected_algo.sort(arr, draw_array)
+                    time.sleep(1)  # Pausa al final para ver el resultado ordenado
 
     pygame.quit()
 
