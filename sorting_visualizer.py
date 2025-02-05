@@ -6,13 +6,13 @@ import importlib.util
 
 # Configuración de la pantalla
 WIDTH, HEIGHT = 800, 600
-WHITE, BLACK = (255, 255, 255), (0, 0, 0)
+WHITE, BLACK, GRAY, YELLOW = (255, 255, 255), (0, 0, 0), (150, 150, 150), (255, 255, 0)
 
 # Inicializar Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Visualización de Algoritmos de Ordenamiento")
-font = pygame.font.Font(None, 30)
+font = pygame.font.Font(None, 36)
 
 # Variables de estadísticas
 iterations = 0
@@ -39,22 +39,6 @@ def load_algorithms():
     return algorithms
 
 algorithms = load_algorithms()
-
-# Función para visualizar los algoritmos disponibles en el menú
-def draw_menu():
-    screen.fill(BLACK)
-    text_lines = ["Seleccione un algoritmo de ordenamiento:"]
-
-    for i, algo in enumerate(algorithms):
-        text_lines.append(f"{i+1} - {algo.name} ({algo.complexity})")
-
-    text_lines.append("ESC - Salir")
-
-    for i, line in enumerate(text_lines):
-        text = font.render(line, True, WHITE)
-        screen.blit(text, (WIDTH // 6, HEIGHT // 3 + i * 40))
-
-    pygame.display.update()
 
 # Función para dibujar estadísticas en pantalla
 def draw_stats():
@@ -83,24 +67,45 @@ def draw_array(arr):
     pygame.display.update()
     time.sleep(0.02)  # Pequeña pausa para hacer la animación más fluida
 
-# Función principal
+# Función para visualizar los algoritmos disponibles en el menú dinámico
+def draw_menu(selected_index):
+    screen.fill(BLACK)
+    title_text = font.render("Seleccione un algoritmo de ordenamiento:", True, WHITE)
+    screen.blit(title_text, (WIDTH // 6, HEIGHT // 6))
+
+    for i, algo in enumerate(algorithms):
+        text_color = YELLOW if i == selected_index else WHITE  # Resaltar opción seleccionada
+        text = font.render(f"{i+1}. {algo.name} ({algo.complexity})", True, text_color)
+        screen.blit(text, (WIDTH // 6, HEIGHT // 4 + i * 40))
+
+    exit_text = font.render("ESC - Salir", True, GRAY)
+    screen.blit(exit_text, (WIDTH // 6, HEIGHT - 50))
+
+    pygame.display.update()
+
+# Función principal con menú interactivo mejorado
 def main():
     global algo_name, start_time, iterations, array_size
+
+    selected_index = 0  # Índice de la opción seleccionada en el menú
     running = True
     while running:
-        draw_menu()
+        draw_menu(selected_index)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.KEYDOWN:
-                keys = list(range(pygame.K_1, pygame.K_1 + len(algorithms)))
 
-                if event.key == pygame.K_ESCAPE:
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:  # Salir
                     running = False
-                elif event.key in keys:
-                    index = event.key - pygame.K_1
-                    selected_algo = algorithms[index]
-                    
+                elif event.key == pygame.K_DOWN:  # Mover hacia abajo
+                    selected_index = (selected_index + 1) % len(algorithms)
+                elif event.key == pygame.K_UP:  # Mover hacia arriba
+                    selected_index = (selected_index - 1) % len(algorithms)
+                elif event.key == pygame.K_RETURN:  # Seleccionar algoritmo
+                    selected_algo = algorithms[selected_index]
+
                     # Configuración para la ejecución
                     algo_name = selected_algo.name
                     array_size = 50
