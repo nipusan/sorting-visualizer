@@ -18,7 +18,23 @@ El sistema es **modular**, lo que significa que **se pueden agregar nuevos algor
 ---
 
 ## 📂 **Estructura del Proyecto**
-sorting-visualizer/ │── algorithms/ # 📌 Carpeta donde se almacenan los algoritmos de ordenamiento │ │── bubblesort.py # Bubble Sort │ │── insertionsort.py # Insertion Sort │ │── selectionsort.py # Selection Sort │ │── shellsort.py # Shell Sort │ │── quicksort.py # Quick Sort │ │── mergesort.py # Merge Sort │ │── heapsort.py # Heap Sort │ │── timsort.py # TimSort │── sorting_visualizer.py # 🎮 Código principal con la interfaz y ejecución de algoritmos │── README.md # 📖 Documentación del proyecto │── requirements.txt # 📦 Dependencias del proyecto
+
+```bash
+sorting-visualizer/
+│── algorithms/             # 📌 Carpeta donde se almacenan los algoritmos de ordenamiento
+│   │── bubblesort.py       # Bubble Sort
+│   │── insertionsort.py    # Insertion Sort
+│   │── selectionsort.py    # Selection Sort
+│   │── shellsort.py        # Shell Sort
+│   │── quicksort.py        # Quick Sort
+│   │── mergesort.py        # Merge Sort
+│   │── heapsort.py         # Heap Sort
+│   │── timsort.py          # TimSort
+│── sorting_visualizer.py   # 🎮 Código principal con la interfaz y ejecución de algoritmos
+│── README.md               # 📖 Documentación del proyecto
+│── requirements.txt        # 📦 Dependencias del proyecto
+
+```
 
 
 
